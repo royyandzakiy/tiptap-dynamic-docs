@@ -1,5 +1,6 @@
 import './style.css'
-import { Editor } from '@tiptap/core'
+import { Editor, Extension } from '@tiptap/core'
+import { Plugin } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import Paragraph from '@tiptap/extension-paragraph'
 import Table from '@tiptap/extension-table'
@@ -28,32 +29,42 @@ function withLockedAttr(extension) {
 const LockedParagraph = withLockedAttr(Paragraph)
 const LockedTableCell = withLockedAttr(TableCell)
 
+// Rejects any transaction whose changes overlap a locked node's range.
+// filterTransaction is a ProseMirror *plugin* hook (not an editorProp), so it
+// must be registered via a Plugin for ProseMirror to actually consult it.
+const LockGuard = Extension.create({
+  name: 'lockGuard',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        filterTransaction(transaction, state) {
+          if (!transaction.docChanged) return true // selection-only changes are fine
+
+          // Collect the document ranges occupied by locked nodes.
+          const lockedRanges = []
+          state.doc.descendants((node, pos) => {
+            if (node.attrs.locked) lockedRanges.push([pos, pos + node.nodeSize])
+          })
+          if (lockedRanges.length === 0) return true
+
+          // Block the transaction if any step touches a locked range.
+          let allowed = true
+          transaction.steps.forEach((step) => {
+            step.getMap().forEach((fromA, toA) => {
+              for (const [from, to] of lockedRanges) {
+                if (fromA < to && toA > from) allowed = false
+              }
+            })
+          })
+          return allowed
+        },
+      }),
+    ]
+  },
+})
+
 const editor = new Editor({
   element: document.querySelector('#editor'),
-  // Reject any transaction whose changes overlap a locked node's range.
-  editorProps: {
-    filterTransaction: (transaction, state) => {
-      if (!transaction.docChanged) return true // selection-only changes are fine
-
-      // Collect the document ranges occupied by locked nodes.
-      const lockedRanges = []
-      state.doc.descendants((node, pos) => {
-        if (node.attrs.locked) lockedRanges.push([pos, pos + node.nodeSize])
-      })
-      if (lockedRanges.length === 0) return true
-
-      // Block the transaction if any step touches a locked range.
-      let allowed = true
-      transaction.steps.forEach((step) => {
-        step.getMap().forEach((fromA, toA) => {
-          for (const [from, to] of lockedRanges) {
-            if (fromA < to && toA > from) allowed = false
-          }
-        })
-      })
-      return allowed
-    },
-  },
   extensions: [
     StarterKit.configure({ paragraph: false }), // use our locked-aware paragraph instead
     LockedParagraph,
@@ -61,6 +72,7 @@ const editor = new Editor({
     TableRow,
     TableHeader,
     LockedTableCell,
+    LockGuard,
   ],
   content: `
     <h1>Title</h1>
