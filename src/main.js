@@ -329,7 +329,7 @@ bubbleEl.innerHTML = `
   </div>
 `
 // Mount the formatting toolbar as a fixed bar (always visible) above the editor.
-document.querySelector('#editor').before(bubbleEl)
+document.querySelector('.page-area').before(bubbleEl)
 
 // Makes a node "trackable" simply by adding class="track" to it (works on any
 // of these node types — paragraphs, headings, table cells, ...).
@@ -439,8 +439,7 @@ const editor = new Editor({
     <p data-locked="true">This is a paragraph 1. Start typing here (non modifiable).</p>
     <p data-locked="true">This is a paragraph 2. Start typing here (non modifiable).</p>
     <p>This is a paragraph 3. Start typing here (modifiable).</p>
-    <p class="track"><img src="https://lmesh.eu/wp-content/uploads/2026/04/ISO-27001-Logo-500x500-1.webp" /></p>
-    <p class="track"></p>
+    <p class="track"><img src="https://framerusercontent.com/images/5z5l6LSUfSupJ1D0llqAx0zO7II.png?width=143&height=161" /></p>
     <p class="track"></p>
     <table>
       <tbody>

@@ -4,6 +4,8 @@
   --page-h: 620px; /* height each "page" can hold before content spills right */
   --page-margin: 28px; /* inner whitespace inside each page (all 4 sides) */
   --page-gap: 32px; /* grey gutter shown between the two pages */
+  --page-header-h: 34px; /* header band at the top of each page */
+  --page-footer-h: 30px; /* footer band at the bottom of each page */
 }
 
 body {
@@ -44,8 +46,10 @@ body {
   height: var(--page-h);
   /* padding = each page's inner margin; the column-gap bundles the right
      margin of the left page + the grey gutter + the left margin of the right
-     page, so content never touches a page edge. */
-  padding: var(--page-margin);
+     page, so content never touches a page edge. Top/bottom padding also
+     reserves room for the header/footer bands so content can't overlap them. */
+  padding: calc(var(--page-header-h) + 10px) var(--page-margin)
+    calc(var(--page-footer-h) + 10px);
   column-count: 2;
   column-gap: calc(var(--page-gap) + 2 * var(--page-margin));
   column-fill: auto;
@@ -57,6 +61,54 @@ body {
     linear-gradient(#fff, #fff) right top / calc(50% - var(--page-gap) / 2) 100%
       no-repeat;
   filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.16));
+}
+
+/* Per-page header/footer: a non-editable overlay sitting over each page's top
+   and bottom bands. pointer-events:none lets clicks pass through to the editor.
+   Each label spans one page's width (matching the white panel) so it never
+   crosses the gutter. */
+.page-area {
+  position: relative;
+}
+
+.page-furniture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pf {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--page-margin);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #9a9a9a;
+}
+
+.pf-left {
+  left: 0;
+  width: calc(50% - var(--page-gap) / 2);
+}
+
+.pf-right {
+  right: 0;
+  width: calc(50% - var(--page-gap) / 2);
+}
+
+.pf-top {
+  top: 0;
+  height: var(--page-header-h);
+  border-bottom: 1px solid #ececec;
+}
+
+.pf-bottom {
+  bottom: 0;
+  height: var(--page-footer-h);
+  border-top: 1px solid #ececec;
 }
 
 /* Keep these blocks whole — move to the next column instead of splitting. */
