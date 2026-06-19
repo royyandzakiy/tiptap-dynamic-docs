@@ -316,7 +316,7 @@ const editor = new Editor({
     Color,
     FontSize,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    Image,
+    Image.configure({ inline: true }), // inline so images can sit inside a paragraph
     StatusSelect,
     DateField,
     Table.configure({ resizable: true }),
@@ -404,8 +404,6 @@ document.querySelector('#insert-date').addEventListener('click', () => {
   editor.chain().focus().insertContent({ type: 'dateField', attrs: { value: '' } }).run()
 })
 
-window.__editor = editor // debug handle
-
 // --- Empty-field counter -----------------------------------------------------
 const counterEl = document.querySelector('#empty-counter')
 function updateCounter() {
@@ -418,6 +416,39 @@ function updateCounter() {
 }
 editor.on('update', updateCounter)
 updateCounter() // initial count
+
+// --- Image preview lightbox --------------------------------------------------
+const lightbox = document.createElement('div')
+lightbox.className = 'lightbox-overlay'
+lightbox.hidden = true
+lightbox.innerHTML = `
+  <button class="lightbox-close" title="Close">&times;</button>
+  <img class="lightbox-img" alt="preview" />
+`
+document.body.appendChild(lightbox)
+const lightboxImg = lightbox.querySelector('.lightbox-img')
+
+function openLightbox(src) {
+  lightboxImg.src = src
+  lightbox.hidden = false
+}
+function closeLightbox() {
+  lightbox.hidden = true
+  lightboxImg.removeAttribute('src')
+}
+
+// Click an image in the document → open the larger preview.
+document.querySelector('#editor').addEventListener('click', (ev) => {
+  const img = ev.target.closest('img')
+  if (img && img.getAttribute('src')) openLightbox(img.getAttribute('src'))
+})
+// Close on backdrop / close-button click (anything except the image itself).
+lightbox.addEventListener('click', (ev) => {
+  if (ev.target !== lightboxImg) closeLightbox()
+})
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && !lightbox.hidden) closeLightbox()
+})
 
 // --- Floating toolbar behaviour ---------------------------------------------
 

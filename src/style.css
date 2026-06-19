@@ -160,6 +160,7 @@ body {
   height: auto;
   border-radius: 6px;
   margin: 0.5em 0;
+  cursor: zoom-in;
 }
 
 /* In-document dropdown field */
@@ -240,6 +241,49 @@ body {
 
 .img-modal-actions button:hover {
   filter: brightness(0.97);
+}
+
+/* Image preview lightbox */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 100;
+  cursor: zoom-out;
+}
+
+.lightbox-overlay[hidden] {
+  display: none;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Counter for empty tracked fields */
