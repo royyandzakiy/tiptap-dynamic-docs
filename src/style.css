@@ -60,10 +60,24 @@ body {
 }
 
 /* Keep these blocks whole — move to the next column instead of splitting. */
-.ProseMirror table,
 .ProseMirror img,
 .ProseMirror pre,
 .ProseMirror blockquote {
+  break-inside: avoid;
+}
+
+/* Tables MAY split across the page boundary, but only between rows (never
+   through the middle of a row). The wrapper must not be a scroll container,
+   or the browser treats the table as monolithic and won't fragment it. */
+.ProseMirror .tableWrapper {
+  overflow: visible;
+}
+
+.ProseMirror table {
+  break-inside: auto;
+}
+
+.ProseMirror tr {
   break-inside: avoid;
 }
 
