@@ -787,3 +787,53 @@ document.addEventListener('mousedown', (ev) => {
   if (editor.view.dom.contains(ev.target) || bubbleEl.contains(ev.target)) return
   hideToolbar()
 })
+
+// --- Pager: navigate the spread 2 pages at a time ---------------------------
+// The multicol layout already lays out every page as a column flowing to the
+// right (clipped by overflow:hidden). We reveal further pages by scrolling the
+// editor horizontally by exactly two columns; the white panels + header/footer
+// are a fixed frame (background-attachment stays put), so only content moves.
+const pmEl = editor.view.dom
+const prevBtn = document.querySelector('#page-prev')
+const nextBtn = document.querySelector('#page-next')
+const pageLabel = document.querySelector('#page-label')
+const footLeft = document.querySelector('.pf-bottom.pf-left')
+const footRight = document.querySelector('.pf-bottom.pf-right')
+let spread = 0
+
+function spreadStep() {
+  const cs = getComputedStyle(pmEl)
+  const inner =
+    pmEl.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0)
+  return inner + (parseFloat(cs.columnGap) || 0) // two columns + one gap
+}
+
+function maxSpread() {
+  const maxScroll = Math.max(0, pmEl.scrollWidth - pmEl.clientWidth)
+  return Math.ceil((maxScroll - 1) / spreadStep())
+}
+
+function renderPager() {
+  const ms = Math.max(0, maxSpread())
+  spread = Math.min(Math.max(0, spread), ms)
+  pmEl.scrollLeft = spread * spreadStep()
+  const l = spread * 2 + 1
+  const r = spread * 2 + 2
+  if (pageLabel) pageLabel.textContent = `Pages ${l}–${r}`
+  if (footLeft) footLeft.textContent = `Page ${l}`
+  if (footRight) footRight.textContent = `Page ${r}`
+  prevBtn.disabled = spread <= 0
+  nextBtn.disabled = spread >= ms
+}
+
+prevBtn.addEventListener('click', () => {
+  spread -= 1
+  renderPager()
+})
+nextBtn.addEventListener('click', () => {
+  spread += 1
+  renderPager()
+})
+window.addEventListener('resize', renderPager)
+editor.on('update', renderPager) // content changed → column count may change
+renderPager()
