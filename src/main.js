@@ -678,8 +678,6 @@ blankBtn.addEventListener('click', () => {
     .run()
 })
 
-window.__editor = editor // debug handle
-
 // Reflect the current selection's formatting in the toolbar controls.
 function syncToolbar() {
   // Inside a no-style node, every styling control is disabled — only the
