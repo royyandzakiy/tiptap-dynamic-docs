@@ -244,11 +244,11 @@ body {
 
 /* Locked (non-modifiable) nodes */
 .ProseMirror .locked {
-  /* background: #f3f3f3; */
+  background: #f3f3f3;
   color: #777;
   cursor: not-allowed;
 }
 
 .ProseMirror td.locked {
-  /* background: #f3f3f3; */
+  background: #f3f3f3;
 }
