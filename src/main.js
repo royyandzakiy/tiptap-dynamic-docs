@@ -279,6 +279,19 @@ const Trackable = Extension.create({
   },
 })
 
+// A tracked node counts as "filled" if it has any text, or holds an image.
+function trackedNodeFilled(node) {
+  if (node.textContent.trim().length > 0) return true
+  let media = false
+  node.descendants((child) => {
+    if (child.type.name === 'image') {
+      media = true
+      return false
+    }
+  })
+  return media
+}
+
 // Colours every tracked node: pink when empty, green when filled. The colours
 // update live because decorations are recomputed from state on each render.
 const TrackFill = Extension.create({
@@ -291,7 +304,7 @@ const TrackFill = Extension.create({
             const decos = []
             state.doc.descendants((node, pos) => {
               if (node.attrs?.track) {
-                const filled = node.textContent.trim().length > 0
+                const filled = trackedNodeFilled(node)
                 decos.push(
                   Decoration.node(pos, pos + node.nodeSize, {
                     class: filled ? 'track-filled' : 'track-empty',
@@ -333,7 +346,7 @@ const editor = new Editor({
     <p data-locked="true">This is a paragraph 1. Start typing here (non modifiable).</p>
     <p data-locked="true">This is a paragraph 2. Start typing here (non modifiable).</p>
     <p>This is a paragraph 3. Start typing here (modifiable).</p>
-    <p class="track"></p>
+    <p class="track"><img src="https://lmesh.eu/wp-content/uploads/2026/04/ISO-27001-Logo-500x500-1.webp" /></p>
     <p class="track"></p>
     <p class="track"></p>
     <table>
@@ -409,7 +422,7 @@ const counterEl = document.querySelector('#empty-counter')
 function updateCounter() {
   let empty = 0
   editor.state.doc.descendants((node) => {
-    if (node.attrs?.track && node.textContent.trim().length === 0) empty++
+    if (node.attrs?.track && !trackedNodeFilled(node)) empty++
   })
   counterEl.textContent = `Empty required fields: ${empty}`
   counterEl.classList.toggle('all-done', empty === 0)
