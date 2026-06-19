@@ -119,6 +119,12 @@ body {
   background: transparent;
 }
 
+.bubble-menu select:disabled,
+.bubble-menu input:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 /* Text (non-icon) toolbar buttons, e.g. "Leave blank" */
 .bubble-menu .bm-text {
   width: auto;

@@ -2,6 +2,12 @@ import './style.css'
 import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
+import {
+  AddMarkStep,
+  RemoveMarkStep,
+  ReplaceStep,
+  ReplaceAroundStep,
+} from '@tiptap/pm/transform'
 import StarterKit from '@tiptap/starter-kit'
 import Paragraph from '@tiptap/extension-paragraph'
 import TextStyle from '@tiptap/extension-text-style'
@@ -225,6 +231,47 @@ const LockGuard = Extension.create({
   },
 })
 
+// Enforces "no styling" inside any node carrying class="no-style": blocks all
+// mark changes (bold/italic/strike/colour/size) and insertion of non-text inline
+// content (images / field widgets). Plain typing and "leave blank" still work.
+const StyleGuard = Extension.create({
+  name: 'styleGuard',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        filterTransaction(transaction, state) {
+          if (!transaction.docChanged) return true
+          const ranges = []
+          state.doc.descendants((node, pos) => {
+            if (node.attrs?.noStyle) ranges.push([pos, pos + node.nodeSize])
+          })
+          if (ranges.length === 0) return true
+          const overlaps = (from, to) =>
+            ranges.some(([a, b]) => from < b && to > a)
+
+          for (const step of transaction.steps) {
+            // Block all text marks.
+            if (step instanceof AddMarkStep || step instanceof RemoveMarkStep) {
+              if (overlaps(step.from, step.to)) return false
+              continue
+            }
+            // Block inserting inline non-text content (images / widgets); typing
+            // text and structural edits (Enter, blankOk toggle) pass through.
+            if (step instanceof ReplaceStep || step instanceof ReplaceAroundStep) {
+              let hasInlineNonText = false
+              step.slice.content.forEach((n) => {
+                if (n.isInline && !n.isText) hasInlineNonText = true
+              })
+              if (hasInlineNonText && overlaps(step.from, step.to)) return false
+            }
+          }
+          return true
+        },
+      }),
+    ]
+  },
+})
+
 // Floating toolbar element (managed/positioned by the BubbleMenu extension).
 const svg = (inner) =>
   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`
@@ -304,6 +351,13 @@ const Trackable = Extension.create({
             renderHTML: (attrs) =>
               attrs.blankOk ? { 'data-blank-ok': 'true' } : {},
           },
+          // Add class="no-style" to a node to forbid all styling: text can only
+          // be typed in the fixed style; marks/alignment/images are blocked.
+          noStyle: {
+            default: false,
+            parseHTML: (el) => el.classList?.contains('no-style') || false,
+            renderHTML: (attrs) => (attrs.noStyle ? { class: 'no-style' } : {}),
+          },
         },
       },
     ]
@@ -376,11 +430,12 @@ const editor = new Editor({
     TableHeader,
     LockedTableCell,
     LockGuard,
+    StyleGuard,
     Trackable,
     TrackFill,
   ],
   content: `
-    <h1>Title</h1>
+    <h1 class="track no-style">Title</h1>
     <p data-locked="true">This is a paragraph 1. Start typing here (non modifiable).</p>
     <p data-locked="true">This is a paragraph 2. Start typing here (non modifiable).</p>
     <p>This is a paragraph 3. Start typing here (modifiable).</p>
@@ -596,6 +651,15 @@ function trackedNodeAt(selection) {
   return null
 }
 
+// True if the selection sits inside any ancestor node carrying the given attr.
+function selectionHasAttr(selection, attr) {
+  const { $from } = selection
+  for (let d = $from.depth; d >= 0; d--) {
+    if ($from.node(d).attrs?.[attr]) return true
+  }
+  return false
+}
+
 const blankBtn = bubbleEl.querySelector('[data-action="blank"]')
 blankBtn.addEventListener('mousedown', (e) => e.preventDefault())
 blankBtn.addEventListener('click', () => {
@@ -614,8 +678,19 @@ blankBtn.addEventListener('click', () => {
     .run()
 })
 
+window.__editor = editor // debug handle
+
 // Reflect the current selection's formatting in the toolbar controls.
 function syncToolbar() {
+  // Inside a no-style node, every styling control is disabled — only the
+  // "Leave blank" button remains usable.
+  const noStyle = selectionHasAttr(editor.state.selection, 'noStyle')
+  bubbleEl
+    .querySelectorAll('button[data-cmd], [data-control], button[data-action="image"]')
+    .forEach((el) => {
+      el.disabled = noStyle
+    })
+
   const map = {
     bold: 'bold',
     italic: 'italic',
@@ -629,14 +704,13 @@ function syncToolbar() {
   }
   bubbleEl.querySelectorAll('button[data-cmd]').forEach((btn) => {
     const q = map[btn.dataset.cmd]
-    const active =
-      typeof q === 'string' ? editor.isActive(q) : editor.isActive(q)
-    btn.classList.toggle('is-active', !!active)
+    btn.classList.toggle('is-active', !noStyle && !!editor.isActive(q))
   })
   fontSizeSelect.value = editor.getAttributes('textStyle').fontSize || ''
   colorInput.value = editor.getAttributes('textStyle').color || '#1a1a1a'
 
-  // "Leave blank" is only meaningful inside a tracked field.
+  // "Leave blank" is only meaningful inside a tracked field (allowed even in
+  // no-style nodes — it's the one thing the title can still do).
   const tracked = trackedNodeAt(editor.state.selection)
   blankBtn.disabled = !tracked
   blankBtn.classList.toggle('is-active', !!(tracked && tracked.node.attrs.blankOk))
