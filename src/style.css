@@ -242,6 +242,39 @@ body {
   filter: brightness(0.97);
 }
 
+/* Counter for empty tracked fields */
+.counter {
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  font-weight: 600;
+  color: #b00038;
+  display: inline-block;
+}
+
+.counter.all-done {
+  color: #1a7f37;
+}
+
+/* Tracked fields: add class="track" to any node (paragraph, cell, ...) */
+.ProseMirror .track {
+  padding: 6px 10px;
+  border-radius: 6px;
+  min-height: 1.2em;
+  transition: background-color 0.2s ease;
+}
+
+.ProseMirror .track-empty {
+  background: #ffe1ec; /* slight pink when empty */
+}
+
+.ProseMirror .track-filled {
+  background: #def7e5; /* green when filled */
+}
+
 /* Locked (non-modifiable) nodes */
 .ProseMirror .locked {
   background: #f3f3f3;

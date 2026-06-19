@@ -1,6 +1,7 @@
 import './style.css'
 import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import StarterKit from '@tiptap/starter-kit'
 import Paragraph from '@tiptap/extension-paragraph'
 import TextStyle from '@tiptap/extension-text-style'
@@ -258,6 +259,54 @@ bubbleEl.innerHTML = `
 `
 document.body.appendChild(bubbleEl)
 
+// Makes a node "trackable" simply by adding class="track" to it (works on any
+// of these node types — paragraphs, headings, table cells, ...).
+const Trackable = Extension.create({
+  name: 'trackable',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph', 'heading', 'tableCell', 'tableHeader'],
+        attributes: {
+          track: {
+            default: false,
+            parseHTML: (el) => el.classList?.contains('track') || false,
+            renderHTML: (attrs) => (attrs.track ? { class: 'track' } : {}),
+          },
+        },
+      },
+    ]
+  },
+})
+
+// Colours every tracked node: pink when empty, green when filled. The colours
+// update live because decorations are recomputed from state on each render.
+const TrackFill = Extension.create({
+  name: 'trackFill',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          decorations(state) {
+            const decos = []
+            state.doc.descendants((node, pos) => {
+              if (node.attrs?.track) {
+                const filled = node.textContent.trim().length > 0
+                decos.push(
+                  Decoration.node(pos, pos + node.nodeSize, {
+                    class: filled ? 'track-filled' : 'track-empty',
+                  })
+                )
+              }
+            })
+            return DecorationSet.create(state.doc, decos)
+          },
+        },
+      }),
+    ]
+  },
+})
+
 const editor = new Editor({
   element: document.querySelector('#editor'),
   extensions: [
@@ -275,6 +324,8 @@ const editor = new Editor({
     TableHeader,
     LockedTableCell,
     LockGuard,
+    Trackable,
+    TrackFill,
     BubbleMenu.configure({ element: bubbleEl, tippyOptions: { duration: 100 } }),
   ],
   content: `
@@ -282,6 +333,9 @@ const editor = new Editor({
     <p data-locked="true">This is a paragraph 1. Start typing here (non modifiable).</p>
     <p data-locked="true">This is a paragraph 2. Start typing here (non modifiable).</p>
     <p>This is a paragraph 3. Start typing here (modifiable).</p>
+    <p class="track"></p>
+    <p class="track"></p>
+    <p class="track"></p>
     <table>
       <tbody>
         <tr>
@@ -299,6 +353,10 @@ const editor = new Editor({
         <tr>
           <td>Due date</td>
           <td><span data-type="date-field" data-value="2026-06-30"></span></td>
+        </tr>
+        <tr>
+          <td>Required field</td>
+          <td class="track"></td>
         </tr>
       </tbody>
     </table>
@@ -345,6 +403,21 @@ document.querySelector('#add-status-row').addEventListener('click', () => {
 document.querySelector('#insert-date').addEventListener('click', () => {
   editor.chain().focus().insertContent({ type: 'dateField', attrs: { value: '' } }).run()
 })
+
+window.__editor = editor // debug handle
+
+// --- Empty-field counter -----------------------------------------------------
+const counterEl = document.querySelector('#empty-counter')
+function updateCounter() {
+  let empty = 0
+  editor.state.doc.descendants((node) => {
+    if (node.attrs?.track && node.textContent.trim().length === 0) empty++
+  })
+  counterEl.textContent = `Empty required fields: ${empty}`
+  counterEl.classList.toggle('all-done', empty === 0)
+}
+editor.on('update', updateCounter)
+updateCounter() // initial count
 
 // --- Floating toolbar behaviour ---------------------------------------------
 
