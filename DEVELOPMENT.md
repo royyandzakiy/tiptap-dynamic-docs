@@ -1,4 +1,4 @@
-- add upload image
-    - able to delete image in text
-    - can preview image in a larger poopup
-- add dropdown
+- add calendar input popup
+- can preview image in a larger poopup
+- add red area that is shown as empty, and make green if filled
+    - add counter up top to count these

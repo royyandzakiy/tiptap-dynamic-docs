@@ -1,5 +1,5 @@
 import './style.css'
-import { Editor, Extension } from '@tiptap/core'
+import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core'
 import { Plugin } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import Paragraph from '@tiptap/extension-paragraph'
@@ -68,6 +68,70 @@ function withLockedAttr(extension) {
 
 const LockedParagraph = withLockedAttr(Paragraph)
 const LockedTableCell = withLockedAttr(TableCell)
+
+// An inline dropdown node: renders a real <select> of predefined options and
+// persists the chosen value as a node attribute (survives reload / getHTML).
+const StatusSelect = Node.create({
+  name: 'statusSelect',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      value: {
+        default: 'Open',
+        parseHTML: (el) => el.getAttribute('data-value') || 'Open',
+        renderHTML: (attrs) => ({ 'data-value': attrs.value }),
+      },
+      options: {
+        default: ['Open', 'In Progress', 'Done'],
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute('data-options'))
+          } catch {
+            return ['Open', 'In Progress', 'Done']
+          }
+        },
+        renderHTML: (attrs) => ({ 'data-options': JSON.stringify(attrs.options) }),
+      },
+    }
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-type="status-select"]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'status-select' })]
+  },
+  addNodeView() {
+    return ({ node, getPos, editor }) => {
+      const dom = document.createElement('span')
+      dom.className = 'status-select'
+      dom.contentEditable = 'false'
+
+      const select = document.createElement('select')
+      ;(node.attrs.options || []).forEach((opt) => {
+        const o = document.createElement('option')
+        o.value = opt
+        o.textContent = opt
+        if (opt === node.attrs.value) o.selected = true
+        select.appendChild(o)
+      })
+      select.addEventListener('change', () => {
+        if (typeof getPos !== 'function') return
+        const tr = editor.view.state.tr.setNodeMarkup(getPos(), undefined, {
+          ...node.attrs,
+          value: select.value,
+        })
+        editor.view.dispatch(tr)
+      })
+
+      dom.appendChild(select)
+      // Let the <select> handle its own events; don't let ProseMirror edit it.
+      return { dom, stopEvent: () => true, ignoreMutation: () => true }
+    }
+  },
+})
 
 // Rejects any transaction whose changes overlap a locked node's range.
 // filterTransaction is a ProseMirror *plugin* hook (not an editorProp), so it
@@ -157,6 +221,7 @@ const editor = new Editor({
     FontSize,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     Image,
+    StatusSelect,
     Table.configure({ resizable: true }),
     TableRow,
     TableHeader,
@@ -179,6 +244,10 @@ const editor = new Editor({
           <td data-locked="true">Cell A (non modifiable)</td>
           <td>Cell B (modifiable)</td>
         </tr>
+        <tr>
+          <td>Status</td>
+          <td><span data-type="status-select" data-value="In Progress" data-options='["Open","In Progress","Done"]'></span></td>
+        </tr>
       </tbody>
     </table>
   `,
@@ -186,6 +255,38 @@ const editor = new Editor({
 
 document.querySelector('#add-table').addEventListener('click', () => {
   editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+})
+
+// Append a row to the (first) table with a label cell + a dropdown cell.
+document.querySelector('#add-status-row').addEventListener('click', () => {
+  const { state } = editor.view
+  const { schema } = state
+  let tableNode = null
+  let tablePos = null
+  state.doc.descendants((node, pos) => {
+    if (node.type.name === 'table' && tableNode === null) {
+      tableNode = node
+      tablePos = pos
+      return false // don't descend; first table is enough
+    }
+  })
+  if (!tableNode) return
+
+  const options = ['Open', 'In Progress', 'Done']
+  const labelCell = schema.nodes.tableCell.create(
+    null,
+    schema.nodes.paragraph.create(null, schema.text('Status'))
+  )
+  const select = schema.nodes.statusSelect.create({ value: 'Open', options })
+  const selectCell = schema.nodes.tableCell.create(
+    null,
+    schema.nodes.paragraph.create(null, select)
+  )
+  const row = schema.nodes.tableRow.create(null, [labelCell, selectCell])
+
+  const insertPos = tablePos + tableNode.nodeSize - 1 // just before the table closes
+  editor.view.dispatch(state.tr.insert(insertPos, row))
+  editor.commands.focus()
 })
 
 // --- Floating toolbar behaviour ---------------------------------------------
