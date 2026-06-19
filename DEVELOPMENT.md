@@ -1,4 +1,2 @@
-- create 2 seperate pages, ensure will overflow to next page
-    - make table rows seperable
-- add header/footer
 - change toolbar to hover anywhere the mouse is clicking
+- enable flipping pages

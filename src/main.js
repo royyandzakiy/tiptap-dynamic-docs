@@ -328,8 +328,10 @@ bubbleEl.innerHTML = `
     <button data-action="blank" class="bm-text" title="Mark the field at the cursor as intentionally blank (turns it green)">Leave blank</button>
   </div>
 `
-// Mount the formatting toolbar as a fixed bar (always visible) above the editor.
-document.querySelector('.page-area').before(bubbleEl)
+// Floating toolbar: hidden until the editor is focused, then positioned near
+// the caret. Mounted on <body> so it can float over the page.
+bubbleEl.hidden = true
+document.body.appendChild(bubbleEl)
 
 // Makes a node "trackable" simply by adding class="track" to it (works on any
 // of these node types — paragraphs, headings, table cells, ...).
@@ -518,47 +520,6 @@ const editor = new Editor({
       </tbody>
     </table>
   `,
-})
-
-document.querySelector('#add-table').addEventListener('click', () => {
-  editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-})
-
-// Append a row to the (first) table with a label cell + a dropdown cell.
-document.querySelector('#add-status-row').addEventListener('click', () => {
-  const { state } = editor.view
-  const { schema } = state
-  let tableNode = null
-  let tablePos = null
-  state.doc.descendants((node, pos) => {
-    if (node.type.name === 'table' && tableNode === null) {
-      tableNode = node
-      tablePos = pos
-      return false // don't descend; first table is enough
-    }
-  })
-  if (!tableNode) return
-
-  const options = ['Open', 'In Progress', 'Done']
-  const labelCell = schema.nodes.tableCell.create(
-    null,
-    schema.nodes.paragraph.create(null, schema.text('Status'))
-  )
-  const select = schema.nodes.statusSelect.create({ value: 'Open', options })
-  const selectCell = schema.nodes.tableCell.create(
-    null,
-    schema.nodes.paragraph.create(null, select)
-  )
-  const row = schema.nodes.tableRow.create(null, [labelCell, selectCell])
-
-  const insertPos = tablePos + tableNode.nodeSize - 1 // just before the table closes
-  editor.view.dispatch(state.tr.insert(insertPos, row))
-  editor.commands.focus()
-})
-
-// Insert an inline date field at the current cursor position.
-document.querySelector('#insert-date').addEventListener('click', () => {
-  editor.chain().focus().insertContent({ type: 'dateField', attrs: { value: '' } }).run()
 })
 
 // --- Empty-field counter -----------------------------------------------------
@@ -767,4 +728,62 @@ function syncToolbar() {
 
 editor.on('selectionUpdate', syncToolbar)
 editor.on('transaction', syncToolbar)
-syncToolbar() // initial state (toolbar is always visible now)
+
+// --- Floating toolbar show/hide + positioning -------------------------------
+const pageArea = document.querySelector('.page-area')
+
+// Vertical position follows the caret (just above the active line, flipping
+// below if there's no room). Horizontal position is centered on whichever
+// single page (left or right) the caret sits in — not the cursor x, and not
+// centered between the two pages.
+function positionToolbar() {
+  const { from } = editor.state.selection
+  let coords
+  try {
+    coords = editor.view.coordsAtPos(from)
+  } catch {
+    return
+  }
+  const rect = bubbleEl.getBoundingClientRect()
+  const margin = 8
+
+  let top = coords.top - rect.height - margin
+  if (top < margin) top = coords.bottom + margin // not enough room above → go below
+
+  const pm = editor.view.dom.getBoundingClientRect()
+  const gap =
+    parseFloat(getComputedStyle(editor.view.dom).getPropertyValue('--page-gap')) ||
+    32
+  const panelW = pm.width / 2 - gap / 2 // width of one page panel
+  const midX = pm.left + pm.width / 2 // gutter centre splits left vs right page
+  const inLeftPage = coords.left < midX
+  const pageCentreX = inLeftPage ? pm.left + panelW / 2 : pm.right - panelW / 2
+
+  let left = pageCentreX - rect.width / 2 // centered on that single page
+  const maxLeft = document.documentElement.clientWidth - rect.width - margin
+  left = Math.max(margin, Math.min(left, maxLeft))
+
+  bubbleEl.style.top = `${top + window.scrollY}px`
+  bubbleEl.style.left = `${left + window.scrollX}px`
+}
+
+function showToolbar() {
+  bubbleEl.hidden = false
+  syncToolbar()
+  positionToolbar()
+}
+function hideToolbar() {
+  bubbleEl.hidden = true
+}
+
+// Show when the editor gains focus or the caret moves; reposition as it moves.
+editor.on('focus', showToolbar)
+editor.on('selectionUpdate', () => {
+  if (!bubbleEl.hidden || editor.view.hasFocus()) showToolbar()
+})
+
+// Hide only when clicking outside both the editor and the toolbar.
+document.addEventListener('mousedown', (ev) => {
+  if (editor.view.dom.contains(ev.target) || bubbleEl.contains(ev.target)) return
+  hideToolbar()
+})

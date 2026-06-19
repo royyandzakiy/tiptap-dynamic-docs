@@ -161,18 +161,26 @@ body {
   background: #d6e4ff;
 }
 
-/* Always-visible formatting toolbar */
+/* Floating formatting toolbar — pops up near the caret when the editor is in
+   use, positioned via JS. */
 .bubble-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 60;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 4px;
-  margin-bottom: 12px;
   padding: 5px 6px;
   background: #202124;
   border: 1px solid #34363a;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.32);
+}
+
+.bubble-menu[hidden] {
+  display: none;
 }
 
 .bubble-menu .bm-group {
