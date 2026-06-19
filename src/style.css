@@ -67,6 +67,169 @@ body {
   background: #d6e4ff;
 }
 
+/* Floating toolbar (bubble menu) */
+.bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: #1f1f1f;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.bubble-menu button {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #eee;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bubble-menu button:hover {
+  background: #3a3a3a;
+}
+
+.bubble-menu button svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.bubble-menu button.is-active {
+  background: #4c8bf5;
+  color: #fff;
+}
+
+.bubble-menu .sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: #444;
+}
+
+.bubble-menu select {
+  height: 28px;
+  border: none;
+  border-radius: 5px;
+  background: #3a3a3a;
+  color: #eee;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.bubble-menu .color-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  color: #eee;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bubble-menu .color-btn:hover {
+  background: #3a3a3a;
+}
+
+.bubble-menu .color-btn input[type='color'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* List rendering inside the editor */
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.4em;
+  margin: 0.5em 0;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 0.5em 0;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid #4c8bf5;
+}
+
+/* Image insert popup */
+.img-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 50;
+}
+
+.img-modal-overlay[hidden] {
+  display: none;
+}
+
+.img-modal {
+  width: 360px;
+  max-width: 90vw;
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.img-modal h3 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.img-modal input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.img-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.img-modal-actions button {
+  padding: 7px 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.img-modal-actions button[data-modal='insert'] {
+  background: #4c8bf5;
+  border-color: #4c8bf5;
+  color: #fff;
+}
+
+.img-modal-actions button:hover {
+  filter: brightness(0.97);
+}
+
 /* Locked (non-modifiable) nodes */
 .ProseMirror .locked {
   background: #f3f3f3;

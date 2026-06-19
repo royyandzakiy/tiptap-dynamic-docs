@@ -1,0 +1,4 @@
+- add upload image
+    - able to delete image in text
+    - can preview image in a larger poopup
+- add dropdown
