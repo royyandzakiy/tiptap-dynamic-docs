@@ -1,2 +1,1 @@
-- can preview image in a larger poopup
-- fix bar to be full width
+- add readme

@@ -227,35 +227,56 @@ const LockGuard = Extension.create({
 })
 
 // Floating toolbar element (managed/positioned by the BubbleMenu extension).
+const svg = (inner) =>
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`
+
+const ICONS = {
+  alignLeft: svg('<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="14" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>'),
+  alignCenter: svg('<line x1="3" y1="6" x2="21" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="5" y1="18" x2="19" y2="18"/>'),
+  alignRight: svg('<line x1="3" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/>'),
+  alignJustify: svg('<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>'),
+  bullet: svg('<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.4" fill="currentColor" stroke="none"/>'),
+  ordered: svg('<line x1="10" y1="6" x2="20" y2="6"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="10" y1="18" x2="20" y2="18"/><text x="2" y="8.5" font-size="8" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="2" y="14.5" font-size="8" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="2" y="20.5" font-size="8" fill="currentColor" stroke="none" font-family="sans-serif">3</text>'),
+  image: svg('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>'),
+}
+
 const bubbleEl = document.createElement('div')
 bubbleEl.className = 'bubble-menu'
 bubbleEl.innerHTML = `
-  <button data-cmd="bold" title="Bold"><b>B</b></button>
-  <button data-cmd="italic" title="Italic"><i>I</i></button>
-  <button data-cmd="strike" title="Strikethrough"><s>S</s></button>
+  <div class="bm-group">
+    <button data-cmd="bold" title="Bold"><span class="bm-bold">B</span></button>
+    <button data-cmd="italic" title="Italic"><span class="bm-italic">I</span></button>
+    <button data-cmd="strike" title="Strikethrough"><span class="bm-strike">S</span></button>
+  </div>
   <span class="sep"></span>
-  <select data-control="fontSize" title="Text size">
-    <option value="">Size</option>
-    <option value="12px">12</option>
-    <option value="14px">14</option>
-    <option value="16px">16</option>
-    <option value="20px">20</option>
-    <option value="24px">24</option>
-    <option value="32px">32</option>
-  </select>
-  <label class="color-btn" title="Text color">
-    A<input type="color" data-control="color" value="#1a1a1a" />
-  </label>
+  <div class="bm-group">
+    <select data-control="fontSize" title="Text size">
+      <option value="">Size</option>
+      <option value="12px">12</option>
+      <option value="14px">14</option>
+      <option value="16px">16</option>
+      <option value="20px">20</option>
+      <option value="24px">24</option>
+      <option value="32px">32</option>
+    </select>
+    <input type="color" data-control="color" value="#1a1a1a" title="Text color" class="color-swatch" />
+  </div>
   <span class="sep"></span>
-  <button data-cmd="align-left" title="Align left">⯇</button>
-  <button data-cmd="align-center" title="Align center">≡</button>
-  <button data-cmd="align-right" title="Align right">⯈</button>
-  <button data-cmd="align-justify" title="Justify">☰</button>
+  <div class="bm-group">
+    <button data-cmd="align-left" title="Align left">${ICONS.alignLeft}</button>
+    <button data-cmd="align-center" title="Align center">${ICONS.alignCenter}</button>
+    <button data-cmd="align-right" title="Align right">${ICONS.alignRight}</button>
+    <button data-cmd="align-justify" title="Justify">${ICONS.alignJustify}</button>
+  </div>
   <span class="sep"></span>
-  <button data-cmd="bulletList" title="Bullet list">•</button>
-  <button data-cmd="orderedList" title="Numbered list">1.</button>
+  <div class="bm-group">
+    <button data-cmd="bulletList" title="Bullet list">${ICONS.bullet}</button>
+    <button data-cmd="orderedList" title="Numbered list">${ICONS.ordered}</button>
+  </div>
   <span class="sep"></span>
-  <button data-action="image" title="Insert image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+  <div class="bm-group">
+    <button data-action="image" title="Insert image">${ICONS.image}</button>
+  </div>
 `
 document.body.appendChild(bubbleEl)
 
@@ -339,7 +360,10 @@ const editor = new Editor({
     LockGuard,
     Trackable,
     TrackFill,
-    BubbleMenu.configure({ element: bubbleEl, tippyOptions: { duration: 100 } }),
+    BubbleMenu.configure({
+      element: bubbleEl,
+      tippyOptions: { duration: 100, maxWidth: 'none' },
+    }),
   ],
   content: `
     <h1>Title</h1>

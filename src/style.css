@@ -71,33 +71,39 @@ body {
 .bubble-menu {
   display: flex;
   align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  background: #202124;
+  border: 1px solid #34363a;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.bubble-menu .bm-group {
+  display: flex;
+  align-items: center;
   gap: 2px;
-  padding: 4px;
-  background: #1f1f1f;
-  border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .bubble-menu button {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   background: transparent;
-  color: #eee;
-  font-size: 14px;
+  color: #e8eaed;
+  font-size: 15px;
   line-height: 1;
   cursor: pointer;
+  transition: background-color 0.12s ease;
 }
 
 .bubble-menu button:hover {
-  background: #3a3a3a;
-}
-
-.bubble-menu button svg {
-  display: block;
-  margin: 0 auto;
+  background: #34363a;
 }
 
 .bubble-menu button.is-active {
@@ -105,47 +111,58 @@ body {
   color: #fff;
 }
 
+.bubble-menu .bm-bold {
+  font-weight: 800;
+}
+
+.bubble-menu .bm-italic {
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.bubble-menu .bm-strike {
+  text-decoration: line-through;
+}
+
 .bubble-menu .sep {
   width: 1px;
-  height: 18px;
-  margin: 0 4px;
-  background: #444;
+  height: 20px;
+  background: #3a3c40;
 }
 
 .bubble-menu select {
-  height: 28px;
+  height: 30px;
+  padding: 0 6px;
   border: none;
-  border-radius: 5px;
-  background: #3a3a3a;
-  color: #eee;
+  border-radius: 6px;
+  background: #34363a;
+  color: #e8eaed;
   font-size: 12px;
   cursor: pointer;
 }
 
-.bubble-menu .color-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 5px;
-  color: #eee;
-  font-weight: 700;
+.bubble-menu .color-swatch {
+  width: 30px;
+  height: 30px;
+  padding: 3px;
+  border: none;
+  border-radius: 6px;
+  background: #34363a;
   cursor: pointer;
 }
 
-.bubble-menu .color-btn:hover {
-  background: #3a3a3a;
+.bubble-menu .color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
 }
 
-.bubble-menu .color-btn input[type='color'] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
+.bubble-menu .color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.bubble-menu .color-swatch::-moz-color-swatch {
+  border: none;
+  border-radius: 4px;
 }
 
 /* List rendering inside the editor */
