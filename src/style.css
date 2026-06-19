@@ -67,16 +67,18 @@ body {
   background: #d6e4ff;
 }
 
-/* Floating toolbar (bubble menu) */
+/* Always-visible formatting toolbar */
 .bubble-menu {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
+  margin-bottom: 12px;
   padding: 5px 6px;
   background: #202124;
   border: 1px solid #34363a;
   border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .bubble-menu .bm-group {
@@ -109,6 +111,20 @@ body {
 .bubble-menu button.is-active {
   background: #4c8bf5;
   color: #fff;
+}
+
+.bubble-menu button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: transparent;
+}
+
+/* Text (non-icon) toolbar buttons, e.g. "Leave blank" */
+.bubble-menu .bm-text {
+  width: auto;
+  padding: 0 10px;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .bubble-menu .bm-bold {
@@ -334,6 +350,12 @@ body {
 
 .ProseMirror .track-filled {
   background: #def7e5; /* green when filled */
+}
+
+.ProseMirror .track-blank {
+  background: #def7e5; /* green: empty but intentionally left blank */
+  outline: 1px dashed #1a7f37;
+  outline-offset: -1px;
 }
 
 /* Locked (non-modifiable) nodes */

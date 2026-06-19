@@ -7,7 +7,6 @@ import Paragraph from '@tiptap/extension-paragraph'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import TextAlign from '@tiptap/extension-text-align'
-import BubbleMenu from '@tiptap/extension-bubble-menu'
 import Image from '@tiptap/extension-image'
 import Table from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
@@ -277,8 +276,13 @@ bubbleEl.innerHTML = `
   <div class="bm-group">
     <button data-action="image" title="Insert image">${ICONS.image}</button>
   </div>
+  <span class="sep"></span>
+  <div class="bm-group">
+    <button data-action="blank" class="bm-text" title="Mark the field at the cursor as intentionally blank (turns it green)">Leave blank</button>
+  </div>
 `
-document.body.appendChild(bubbleEl)
+// Mount the formatting toolbar as a fixed bar (always visible) above the editor.
+document.querySelector('#editor').before(bubbleEl)
 
 // Makes a node "trackable" simply by adding class="track" to it (works on any
 // of these node types — paragraphs, headings, table cells, ...).
@@ -294,14 +298,20 @@ const Trackable = Extension.create({
             parseHTML: (el) => el.classList?.contains('track') || false,
             renderHTML: (attrs) => (attrs.track ? { class: 'track' } : {}),
           },
+          blankOk: {
+            default: false,
+            parseHTML: (el) => el.getAttribute('data-blank-ok') === 'true',
+            renderHTML: (attrs) =>
+              attrs.blankOk ? { 'data-blank-ok': 'true' } : {},
+          },
         },
       },
     ]
   },
 })
 
-// A tracked node counts as "filled" if it has any text, or holds an image.
-function trackedNodeFilled(node) {
+// True when a tracked node has real content (text or an image).
+function hasContent(node) {
   if (node.textContent.trim().length > 0) return true
   let media = false
   node.descendants((child) => {
@@ -311,6 +321,12 @@ function trackedNodeFilled(node) {
     }
   })
   return media
+}
+
+// A tracked node counts as "filled" (green) if it has content OR is explicitly
+// marked intentionally blank via the "Leave blank" toolbar action.
+function trackedNodeFilled(node) {
+  return hasContent(node) || !!node.attrs?.blankOk
 }
 
 // Colours every tracked node: pink when empty, green when filled. The colours
@@ -325,11 +341,13 @@ const TrackFill = Extension.create({
             const decos = []
             state.doc.descendants((node, pos) => {
               if (node.attrs?.track) {
-                const filled = trackedNodeFilled(node)
+                const cls = hasContent(node)
+                  ? 'track-filled'
+                  : node.attrs.blankOk
+                    ? 'track-blank'
+                    : 'track-empty'
                 decos.push(
-                  Decoration.node(pos, pos + node.nodeSize, {
-                    class: filled ? 'track-filled' : 'track-empty',
-                  })
+                  Decoration.node(pos, pos + node.nodeSize, { class: cls })
                 )
               }
             })
@@ -360,10 +378,6 @@ const editor = new Editor({
     LockGuard,
     Trackable,
     TrackFill,
-    BubbleMenu.configure({
-      element: bubbleEl,
-      tippyOptions: { duration: 100, maxWidth: 'none' },
-    }),
   ],
   content: `
     <h1>Title</h1>
@@ -571,6 +585,35 @@ colorInput.addEventListener('input', () => {
   editor.chain().focus().setColor(colorInput.value).run()
 })
 
+// "Leave blank" — finds the tracked field containing the cursor and toggles its
+// intentionally-blank flag (an empty field then counts as fulfilled → green).
+function trackedNodeAt(selection) {
+  const { $from } = selection
+  for (let d = $from.depth; d >= 1; d--) {
+    const node = $from.node(d)
+    if (node.attrs?.track) return { node, pos: $from.before(d) }
+  }
+  return null
+}
+
+const blankBtn = bubbleEl.querySelector('[data-action="blank"]')
+blankBtn.addEventListener('mousedown', (e) => e.preventDefault())
+blankBtn.addEventListener('click', () => {
+  const tracked = trackedNodeAt(editor.state.selection)
+  if (!tracked) return
+  editor
+    .chain()
+    .focus()
+    .command(({ tr }) => {
+      tr.setNodeMarkup(tracked.pos, undefined, {
+        ...tracked.node.attrs,
+        blankOk: !tracked.node.attrs.blankOk,
+      })
+      return true
+    })
+    .run()
+})
+
 // Reflect the current selection's formatting in the toolbar controls.
 function syncToolbar() {
   const map = {
@@ -592,7 +635,13 @@ function syncToolbar() {
   })
   fontSizeSelect.value = editor.getAttributes('textStyle').fontSize || ''
   colorInput.value = editor.getAttributes('textStyle').color || '#1a1a1a'
+
+  // "Leave blank" is only meaningful inside a tracked field.
+  const tracked = trackedNodeAt(editor.state.selection)
+  blankBtn.disabled = !tracked
+  blankBtn.classList.toggle('is-active', !!(tracked && tracked.node.attrs.blankOk))
 }
 
 editor.on('selectionUpdate', syncToolbar)
 editor.on('transaction', syncToolbar)
+syncToolbar() // initial state (toolbar is always visible now)
