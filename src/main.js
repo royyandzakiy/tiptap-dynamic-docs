@@ -466,6 +466,58 @@ const editor = new Editor({
         </tr>
       </tbody>
     </table>
+    <p data-locked="true">This is a paragraph 2. Start typing here (non modifiable).</p>
+    <p>This is a paragraph 3. Start typing here (modifiable).</p>
+    <table>
+      <tbody>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+        <tr>
+          <td data-locked="true">Cell A (non modifiable)</td>
+          <td>Cell B (modifiable)</td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><span data-type="status-select" data-value="In Progress" data-options='["Open","In Progress","Done"]'></span></td>
+        </tr>
+        <tr>
+          <td>Due date</td>
+          <td><span data-type="date-field" data-value="2026-06-30"></span></td>
+        </tr>
+        <tr>
+          <td>Required field</td>
+          <td class="track"></td>
+        </tr>
+      </tbody>
+    </table>
+    <p data-locked="true">This is a paragraph 2. Start typing here (non modifiable).</p>
+    <p>This is a paragraph 3. Start typing here (modifiable).</p>
+    <table>
+      <tbody>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+        <tr>
+          <td data-locked="true">Cell A (non modifiable)</td>
+          <td>Cell B (modifiable)</td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><span data-type="status-select" data-value="In Progress" data-options='["Open","In Progress","Done"]'></span></td>
+        </tr>
+        <tr>
+          <td>Due date</td>
+          <td><span data-type="date-field" data-value="2026-06-30"></span></td>
+        </tr>
+        <tr>
+          <td>Required field</td>
+          <td class="track"></td>
+        </tr>
+      </tbody>
+    </table>
   `,
 })
 
