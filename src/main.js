@@ -133,6 +133,53 @@ const StatusSelect = Node.create({
   },
 })
 
+// An inline date field: a native <input type="date"> (calendar popup) whose
+// chosen value is persisted as a node attribute.
+const DateField = Node.create({
+  name: 'dateField',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      value: {
+        default: '',
+        parseHTML: (el) => el.getAttribute('data-value') || '',
+        renderHTML: (attrs) => ({ 'data-value': attrs.value }),
+      },
+    }
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-type="date-field"]' }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes(HTMLAttributes, { 'data-type': 'date-field' })]
+  },
+  addNodeView() {
+    return ({ node, getPos, editor }) => {
+      const dom = document.createElement('span')
+      dom.className = 'date-field'
+      dom.contentEditable = 'false'
+
+      const input = document.createElement('input')
+      input.type = 'date'
+      if (node.attrs.value) input.value = node.attrs.value
+      input.addEventListener('change', () => {
+        if (typeof getPos !== 'function') return
+        const tr = editor.view.state.tr.setNodeMarkup(getPos(), undefined, {
+          ...node.attrs,
+          value: input.value,
+        })
+        editor.view.dispatch(tr)
+      })
+
+      dom.appendChild(input)
+      return { dom, stopEvent: () => true, ignoreMutation: () => true }
+    }
+  },
+})
+
 // Rejects any transaction whose changes overlap a locked node's range.
 // filterTransaction is a ProseMirror *plugin* hook (not an editorProp), so it
 // must be registered via a Plugin for ProseMirror to actually consult it.
@@ -222,6 +269,7 @@ const editor = new Editor({
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     Image,
     StatusSelect,
+    DateField,
     Table.configure({ resizable: true }),
     TableRow,
     TableHeader,
@@ -247,6 +295,10 @@ const editor = new Editor({
         <tr>
           <td>Status</td>
           <td><span data-type="status-select" data-value="In Progress" data-options='["Open","In Progress","Done"]'></span></td>
+        </tr>
+        <tr>
+          <td>Due date</td>
+          <td><span data-type="date-field" data-value="2026-06-30"></span></td>
         </tr>
       </tbody>
     </table>
@@ -287,6 +339,11 @@ document.querySelector('#add-status-row').addEventListener('click', () => {
   const insertPos = tablePos + tableNode.nodeSize - 1 // just before the table closes
   editor.view.dispatch(state.tr.insert(insertPos, row))
   editor.commands.focus()
+})
+
+// Insert an inline date field at the current cursor position.
+document.querySelector('#insert-date').addEventListener('click', () => {
+  editor.chain().focus().insertContent({ type: 'dateField', attrs: { value: '' } }).run()
 })
 
 // --- Floating toolbar behaviour ---------------------------------------------

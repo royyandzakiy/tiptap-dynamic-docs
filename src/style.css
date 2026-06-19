@@ -163,7 +163,8 @@ body {
 }
 
 /* In-document dropdown field */
-.ProseMirror .status-select select {
+.ProseMirror .status-select select,
+.ProseMirror .date-field input {
   font: inherit;
   padding: 3px 8px;
   border: 1px solid #bbb;
